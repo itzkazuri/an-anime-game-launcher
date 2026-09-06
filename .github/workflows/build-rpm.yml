@@ -3,6 +3,8 @@ name: Build Fedora RPM
 on:
   push:
     branches: [ main, master ]
+    tags:
+      - 'v*'
   pull_request:
     branches: [ main, master ]
   workflow_dispatch:
@@ -20,7 +22,7 @@ jobs:
       - name: Install build dependencies
         run: |
           dnf install -y rpm-build rpmdevtools rust cargo gcc cmake pkg-config \
-            glib2-devel gtk4-devel libadwaita-devel openssl-devel protobuf-compiler tar
+            glib2-devel gtk4-devel libadwaita-devel openssl-devel protobuf-compiler appstream tar
 
       - name: Set up RPM build tree
         run: |
@@ -49,3 +51,21 @@ jobs:
           path: |
             ~/rpmbuild/RPMS/**/*.rpm
             ~/rpmbuild/SRPMS/*.rpm
+
+      # Fix ownership so the next step (running outside the container's root)
+      # can read files created by rpmbuild inside the Fedora container.
+      - name: Fix permissions for release step
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          chmod -R a+rX ~/rpmbuild/RPMS ~/rpmbuild/SRPMS
+
+      - name: Publish to GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            /github/home/rpmbuild/RPMS/**/*.rpm
+            /github/home/rpmbuild/SRPMS/*.rpm
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
