@@ -1,0 +1,84 @@
+name: Build AppImage
+
+on:
+  push:
+    branches: [ main, master ]
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  build-appimage:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential cmake pkg-config \
+            libglib2.0-dev libgtk-4-dev libadwaita-1-dev libssl-dev \
+            protobuf-compiler curl file zsync desktop-file-utils
+
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+
+      - name: Build release binary
+        run: cargo build --release
+
+      - name: Download linuxdeploy
+        run: |
+          wget -q https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage
+          chmod +x linuxdeploy-x86_64.AppImage
+
+      - name: Prepare AppDir
+        run: |
+          mkdir -p AppDir/usr/bin
+          mkdir -p AppDir/usr/share/applications
+          mkdir -p AppDir/usr/share/metainfo
+          mkdir -p AppDir/usr/share/icons/hicolor/256x256/apps
+
+          cp target/release/anime-game-launcher AppDir/usr/bin/
+          cp assets/anime-game-launcher.desktop AppDir/usr/share/applications/
+          cp assets/moe.launcher.an-anime-game-launcher.metainfo.xml AppDir/usr/share/metainfo/ || true
+          cp assets/icon.png AppDir/usr/share/icons/hicolor/256x256/apps/anime-game-launcher.png || true
+
+          # Custom AppRun dengan dependency check
+          cp AppRun AppDir/AppRun
+          chmod +x AppDir/AppRun
+
+      - name: Build AppImage
+        run: |
+          ./linuxdeploy-x86_64.AppImage \
+            --appdir AppDir \
+            --desktop-file AppDir/usr/share/applications/anime-game-launcher.desktop \
+            --icon-file AppDir/usr/share/icons/hicolor/256x256/apps/anime-game-launcher.png \
+            --output appimage \
+            --custom-apprun AppDir/AppRun
+
+      - name: Rename output
+        run: |
+          VERSION=$(grep -m1 '^Version:' anime-game-launcher.spec | awk '{print $2}')
+          mv Anime_Game_launcher-*.AppImage anime-game-launcher-${VERSION}-x86_64.AppImage || \
+          mv *.AppImage anime-game-launcher-${VERSION}-x86_64.AppImage
+
+      - name: Upload AppImage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: appimage
+          path: anime-game-launcher-*.AppImage
+
+      - name: Publish to GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: anime-game-launcher-*.AppImage
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
