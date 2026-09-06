@@ -27,6 +27,7 @@ jobs:
 
       - name: Prepare source tarball
         run: |
+          git config --global --add safe.directory "$(pwd)"
           VERSION=$(grep -m1 '^Version:' anime-game-launcher.spec | awk '{print $2}')
           NAME=$(grep -m1 '^Name:' anime-game-launcher.spec | awk '{print $2}')
           git archive --format=tar.gz --prefix=an-${NAME}-${VERSION}/ HEAD -o ~/rpmbuild/SOURCES/v${VERSION}.tar.gz
