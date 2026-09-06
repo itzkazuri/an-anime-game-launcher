@@ -19,6 +19,7 @@ BuildRequires:  glib2-devel
 BuildRequires:  gtk4-devel
 BuildRequires:  libadwaita-devel
 BuildRequires:  openssl-devel
+BuildRequires:  protobuf-compiler
 
 %description
 An Anime Game launcher is an unofficial launcher for anime games that handles setting up Wine and installing the game on Linux.
