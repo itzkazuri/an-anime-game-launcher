@@ -37,17 +37,12 @@
 
                             maintainers = [
                                 {
-                                    name = "Nikita Podvirnyi";
-                                    email = "krypt0nn@vk.com";
-                                    matrix = "@krypt0nn:mozilla.org";
-                                    github = "krypt0nn";
-                                    githubId = 29639507;
+                                    name = "itzkazuri";
+                                    github = "itzkazuri";
                                 }
                                 {
-                                    name = "@JohnTheCoolingFan";
-                                    email = "ivan8215145640@gmail.com";
-                                    github = "JohnTheCoolingFan";
-                                    githubId = 43478602;
+                                    name = "aagl team";
+                                    github = "an-anime-team";
                                 }
                             ];
                         };

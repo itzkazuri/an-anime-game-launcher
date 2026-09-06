@@ -1,0 +1,42 @@
+name: Build Fedora RPM
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build-rpm:
+    runs-on: ubuntu-latest
+    container:
+      image: fedora:latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install build dependencies
+        run: |
+          dnf install -y rpm-build rpmdevtools rust cargo gcc cmake pkg-config glib2-devel gtk4-devel libadwaita-devel openssl-devel git
+
+      - name: Set up RPM build tree
+        run: |
+          rpmdev-setuptree
+
+      - name: Prepare source tarball
+        run: |
+          VERSION=$(grep -m1 '^Version:' anime-game-launcher.spec | awk '{print $2}')
+          NAME=$(grep -m1 '^Name:' anime-game-launcher.spec | awk '{print $2}')
+          git archive --format=tar.gz --prefix=an-${NAME}-${VERSION}/ HEAD -o ~/rpmbuild/SOURCES/v${VERSION}.tar.gz
+
+      - name: Build RPM
+        run: |
+          rpmbuild -ba anime-game-launcher.spec
+
+      - name: Upload RPM artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: fedora-rpm
+          path: ~/rpmbuild/RPMS/**/*.rpm
