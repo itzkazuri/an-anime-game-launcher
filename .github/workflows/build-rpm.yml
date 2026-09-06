@@ -19,7 +19,7 @@ jobs:
 
       - name: Install build dependencies
         run: |
-          dnf install -y rpm-build rpmdevtools rust cargo gcc cmake pkg-config glib2-devel gtk4-devel libadwaita-devel openssl-devel git
+          dnf install -y rpm-build rpmdevtools rust cargo gcc cmake pkg-config glib2-devel gtk4-devel libadwaita-devel openssl-devel tar
 
       - name: Set up RPM build tree
         run: |
@@ -27,10 +27,11 @@ jobs:
 
       - name: Prepare source tarball
         run: |
-          git config --global --add safe.directory "$(pwd)"
           VERSION=$(grep -m1 '^Version:' anime-game-launcher.spec | awk '{print $2}')
           NAME=$(grep -m1 '^Name:' anime-game-launcher.spec | awk '{print $2}')
-          git archive --format=tar.gz --prefix=an-${NAME}-${VERSION}/ HEAD -o ~/rpmbuild/SOURCES/v${VERSION}.tar.gz
+          mkdir -p /tmp/build-sources/an-${NAME}-${VERSION}
+          cp -a . /tmp/build-sources/an-${NAME}-${VERSION}/
+          tar -czf ~/rpmbuild/SOURCES/v${VERSION}.tar.gz -C /tmp/build-sources an-${NAME}-${VERSION}
 
       - name: Build RPM
         run: |
